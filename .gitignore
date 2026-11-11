@@ -1,0 +1,9 @@
+# Documentacion: los .md no se versionan
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Flag local de pruebas
+flag.txt
