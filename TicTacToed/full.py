@@ -6,9 +6,10 @@
 """
 TicTacToed
 
-    uv run full.py                          # local (ejecuta ./tictactoe)
-    uv run full.py --host IP:PUERTO         # remoto
-    uv run full.py --help
+    uv run --with pwntools full.py
+    uv run --with pwntools full.py --host IP:PUERTO
+    python3 full.py
+    python3 full.py --host IP:PUERTO
 
 """
 
@@ -21,13 +22,12 @@ from pwn import context, p64, process, remote
 MOVES = ["0 0", "0 4", "1 1", "1 3", "2 2", "3 1", "3 3", "4 0", "4 4"]
 
 # --- partes cifradas que decrypt_key descifra con XOR ----------------------
-XOR_KEY = 0x5A
-XOR_PARTS = ["1e693c6b34692e", "36233b6d6b396d", "6e396d6a693d3b3769"]
-
+XOR_KEY = ???
+XOR_PARTS = ["???", "???", "???"]
 USER = "mau"  # el menú C2 no lo valida
 
-GEN = 0x143C  # prod: 0x13FD
-GET = 0x1269  # prod: 0x125D
+GEN = ???  # prod: 0x13FD
+GET = ???  # prod: 0x125D
 
 BINARY = "tictactoe"  # binario local cuando no se pasa --host
 

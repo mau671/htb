@@ -2,6 +2,7 @@
 """
 SEPC (HackTheBox)
 
+    uv run --with pwntools full.py
     python3 full.py
 
 El módulo checker.ko compara cada byte enviado contra ENC[i] ^ KEY[i], y los
@@ -11,8 +12,8 @@ añade al final.
 """
 
 # --- blobs de .rodata de checker.ko ---------------------------------------
-ENC = "b4e4e9ab09364ac2a514e53566c399145a34f118917d2370fab53dfa3de500d16915"  # 0x00100420
-KEY = "fcb0abd06e442ba0c77d8b5239a7ad606e6b976aa1107c1bc9c753c951d070e50a26"  # 0x00100460
+ENC = "???"  # 0x00100420
+KEY = "???"  # 0x00100460
 
 
 def main() -> None:
