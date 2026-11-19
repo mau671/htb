@@ -14,16 +14,8 @@ from itertools import product
 # --- regex embebidas: strings bin/rega_town | grep '(?:' --------------------
 REGEX = r"???"
 
-# --- corr_values: las 7 mitades bajas del dump de gdb, tal cual salen -------
-# Passphrase de prueba:
-#   HTB{X0a_Aa0_Th0_A0na_O0_Tae_Tnnn}
-#
-#   (gdb) break rega_town::check_input
-#   (gdb) run
-#   (gdb) break *($pc+0x516)
-#   (gdb) c
-#   (gdb) x/14gx $rsp+0x180
-CORR_VALUES = ["???", "???", "???", "???", "???", "???", "???"]
+# --- corr_values: las 7 constantes, tal cual salen de Ghidra ----------------
+CORR_VALUES = [???, ???, ???, ???, ???, ???, ???]
 
 # --- alfabetos --------------------------------------------------------------
 MAYUSCULAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -200,7 +192,7 @@ def main():
     for numero, alfabetos in enumerate(segmentos, 1):
         print(f"   {numero} -> {alfabetos}")
 
-    # CORR_VALUES se pega tal cual del dump (hex); si ya son enteros, directo
+    # las constantes se pegan tal cual de Ghidra (0x...); si vienen como texto
     objetivos = [v if isinstance(v, int) else int(v, 16) for v in CORR_VALUES]
 
     partes = list()

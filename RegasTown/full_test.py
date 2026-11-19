@@ -11,15 +11,15 @@ from itertools import product
 # --- regex embebidas: strings bin/rega_town | grep '(?:' --------------------
 REGEX = r"^.{33}$(?:^[\x48][\x54][\x42]).*^.{3}(\x7b).*(\x7d)$^[[:upper:]]{3}.[[:upper:]].{3}[[:upper:]].{3}[[:upper:]].{3}[[:upper:]].{4}[[:upper:]].{2}[[:upper:]].{3}[[:upper:]].{4}$(?:.*\x5f.*)(?:.[^0-9]*\d.*){5}.{24}\x54.\x65.\x54.*^.{4}[X-Z]\d._[A]\D\d.................[[:upper:]][n-x]{2}[n|c].$.{11}_T[h|7]\d_[[:upper:]]\dn[a-h]_[O]\d_[[:alpha:]]{3}_.{5}"
 
-# --- corr_values: las 7 mitades bajas del dump de gdb, tal cual salen -------
+# --- corr_values: las 7 constantes, tal cual salen de Ghidra ----------------
 CORR_VALUES = [
-    "0x7a070",
-    "0x5c436",
-    "0x6cc60",
-    "0x27b5776",
-    "0x10f9",
-    "0xd76a0",
-    "0x7465a58",
+    0x7a070,
+    0x5c436,
+    0x6cc60,
+    0x27b5776,
+    0x10f9,
+    0xd76a0,
+    0x7465a58,
 ]
 
 # --- alfabetos --------------------------------------------------------------
@@ -197,7 +197,7 @@ def main():
     for numero, alfabetos in enumerate(segmentos, 1):
         print(f"   {numero} -> {alfabetos}")
 
-    # CORR_VALUES se pega tal cual del dump (hex); si ya son enteros, directo
+    # las constantes se pegan tal cual de Ghidra (0x...); si vienen como texto
     objetivos = [v if isinstance(v, int) else int(v, 16) for v in CORR_VALUES]
 
     partes = list()
