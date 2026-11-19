@@ -4,7 +4,7 @@
 # dependencies = ["pwntools"]
 # ///
 """
-TicTacToed
+TicTacToed (HackTheBox)
 
     uv run --with pwntools full.py
     uv run --with pwntools full.py --host IP:PUERTO

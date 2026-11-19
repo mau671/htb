@@ -2,6 +2,8 @@
 """
 NextPath (HackTheBox)
 
+    uv run --with requests full.py
+    uv run --with requests full.py --host IP:PUERTO
     python3 full.py
     python3 full.py --host IP:PUERTO
 

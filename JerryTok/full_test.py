@@ -2,6 +2,8 @@
 """
 JerryTok (HackTheBox)
 
+    uv run --with requests full_test.py
+    uv run --with requests full_test.py --host IP:PUERTO
     python3 full_test.py
     python3 full_test.py --host IP:PUERTO
 """

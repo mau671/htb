@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
-# =============================================================
-#  full.py - Evil Corp (Hack The Box)
-# =============================================================
+"""
+Evil Corp (HackTheBox)
+
+    uv run --with pwntools full.py
+    uv run --with pwntools full.py --host IP:PUERTO
+    python3 full.py
+    python3 full.py --host IP:PUERTO
+
+"""
 
 import argparse
 import os

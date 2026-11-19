@@ -2,7 +2,6 @@
 """
 SEPC (HackTheBox)
 
-    uv run --with pwntools full.py
     python3 full.py
 
 El módulo checker.ko compara cada byte enviado contra ENC[i] ^ KEY[i], y los
