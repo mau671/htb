@@ -49,7 +49,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.host:
-        host, _, port = args.host.partition(":")
+        host, _, port = args.host.split("://")[-1].partition(":")
         io = remote(host, int(port))
     else:
         binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), BINARY)

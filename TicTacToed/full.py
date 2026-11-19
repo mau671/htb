@@ -19,10 +19,10 @@ import os
 from pwn import context, p64, process, remote
 
 # --- movimientos, en el orden exacto que valida obfuscate_pattern ----------
-MOVES = ["0 0", "0 4", "1 1", "1 3", "2 2", "3 1", "3 3", "4 0", "4 4"]
+MOVES = ["???", "???", "???", "???", "???", "???", "???", "???", "???"]
 
 # --- partes cifradas que decrypt_key descifra con XOR ----------------------
-XOR_KEY = ???
+XOR_KEY = 0x5A
 XOR_PARTS = ["???", "???", "???"]
 USER = "mau"  # el menú C2 no lo valida
 
@@ -49,7 +49,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.host:
-        host, _, port = args.host.partition(":")
+        host, _, port = args.host.split("://")[-1].partition(":")
         io = remote(host, int(port))
     else:
         binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), BINARY)

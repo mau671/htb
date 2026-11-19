@@ -6,12 +6,15 @@ Rega's Town (HackTheBox)
 
 check_input multiplica los codigos ASCII de los 7 segmentos de la
 passphrase y los compara contra las constantes de corr_values.
-La version completa (para practicar) es full_test.py.
 """
 
+import re
 from itertools import product
 
-# --- corr_values (en decimal) ------------------------------------------------
+# --- regex embebidas: strings bin/rega_town | grep '(?:' --------------------
+REGEX = r"???"
+
+# --- corr_values: las 7 mitades bajas del dump de gdb, tal cual salen -------
 # Passphrase de prueba:
 #   HTB{X0a_Aa0_Th0_A0na_O0_Tae_Tnnn}
 #
@@ -20,25 +23,143 @@ from itertools import product
 #   (gdb) break *($pc+0x516)
 #   (gdb) c
 #   (gdb) x/14gx $rsp+0x180
-CORR_VALUES = [???, ???, ???, ???, ???, ???, ???]
+CORR_VALUES = ["???", "???", "???", "???", "???", "???", "???"]
 
-# --- alfabetos genericos (no son datos del reto) ----------------------------
-DIGITOS    = "0123456789"
+# --- alfabetos --------------------------------------------------------------
 MAYUSCULAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 MINUSCULAS = "abcdefghijklmnopqrstuvwxyz"
+DIGITOS    = "0123456789"
 LETRAS     = MAYUSCULAS + MINUSCULAS
+UNIVERSO   = LETRAS + DIGITOS + "_{}"
 
-# --- la rejilla: cada segmento es la tupla de alfabetos que las regex
-#     permiten por posicion (un caracter fijo es un alfabeto de 1 letra) -----
-SEGMENTOS = [
-    (???, DIGITOS, LETRAS),           # pos 4-6:   regex 8: [X-Z]\d?.\_A...
-    (???, LETRAS, DIGITOS),           # pos 8-10:  regex 8: \_A\D\d
-    (???, ???, DIGITOS),              # pos 12-14: regex 9: \_T[h|7]\d\_ (el | es literal)
-    (MAYUSCULAS, DIGITOS, ???, ???),  # pos 16-19: regex 9: [[:upper:]]\dn[a-h]\_
-    (???, DIGITOS),                   # pos 21-22: regex 9: \_[O]\d\_ (EL hueco de la rejilla)
-    (???, LETRAS, ???),               # pos 24-26: regex 7: .{24}T.e.T
-    (???, ???, ???, ???),             # pos 28-31: regex 8: T[n-x]{2}[n|c]
-]
+POSIX = {
+    "[[:upper:]]": MAYUSCULAS,
+    "[[:lower:]]": MINUSCULAS,
+    "[[:alpha:]]": LETRAS,
+    "[[:digit:]]": DIGITOS,
+}
+
+# token de una regex: clase POSIX, clase, grupo, cuantificador, escape o literal
+TOKEN = re.compile(r"\[\[:[a-z]+:\]\]|\[[^\]]*\]|\(\?:|\(|\)|\{\d+\}|\*|\+|\?|\^|\$|\.|\\[dDwW]|\\x[0-9a-fA-F]{2}|.", re.S)
+
+# los 7 pedazos de la passphrase: posiciones 4-31 entre los guiones bajos
+TROZOS = ((4, 7), (8, 11), (12, 15), (16, 20), (21, 23), (24, 27), (28, 32))
+
+
+def expandir_clase(clase):
+    """[X-Z] -> 'XYZ'; [a-h] -> 'abcdefgh'; [h|7] -> 'h7'."""
+    contenido = clase[1:-1]
+    salida = ""
+    i = 0
+    while i < len(contenido):
+        if contenido.startswith(r"\x", i):
+            salida += chr(int(contenido[i + 2:i + 4], 16))
+            i += 4
+        elif i + 2 < len(contenido) and contenido[i + 1] == "-":
+            salida += "".join(chr(c) for c in range(ord(contenido[i]), ord(contenido[i + 2]) + 1))
+            i += 3
+        else:
+            if contenido[i] != "|":  # el | adentro de una clase es literal
+                salida += contenido[i]
+            i += 1
+    return salida
+
+
+def dividir_regex(blob):
+    """Parte el blob concatenado en las regex individuales."""
+    unidades, actual = [], []
+    profundidad = 0
+    tokens = TOKEN.findall(blob)
+    i = 0
+    while i < len(tokens):
+        t = tokens[i]
+        actual.append(t)
+        sigue = tokens[i + 1] if i + 1 < len(tokens) else None
+        if t in ("(", "(?:"):
+            profundidad += 1
+        elif t == ")":
+            profundidad -= 1
+            if profundidad == 0:
+                if sigue and sigue.startswith("{"):
+                    actual.append(sigue)
+                    i += 1
+                    unidades.append(actual)
+                    actual = []
+                elif sigue in (None, "^", "(?:"):
+                    unidades.append(actual)
+                    actual = []
+        elif t == "$" and profundidad == 0:
+            unidades.append(actual)
+            actual = []
+        elif t == "*" and profundidad == 0 and len(actual) >= 2 and actual[-2] == ".":
+            if sigue in (None, "^", "(?:", "."):
+                unidades.append(actual)
+                actual = []
+        i += 1
+    if actual:
+        unidades.append(actual)
+    return unidades
+
+
+def restricciones(tokens):
+    """Alfabetos por posicion de una regex; None si no es de largo fijo."""
+    posicion = 0
+    salida = []
+    i = 0
+    while i < len(tokens):
+        t = tokens[i]
+        i += 1
+        if t in ("^", "$", "(", "(?:", ")"):
+            continue
+        if t in ("*", "+", "?"):
+            return None
+        if t == ".":
+            if i < len(tokens) and tokens[i] == "*":
+                break  # resto comodin: se acaba la parte fija
+            conjunto = UNIVERSO
+        elif t == r"\d":
+            conjunto = DIGITOS
+        elif t == r"\D":
+            conjunto = LETRAS
+        elif t.startswith(r"\x"):
+            conjunto = chr(int(t[2:], 16))
+        elif t in POSIX:
+            conjunto = POSIX[t]
+        elif t.startswith("["):
+            conjunto = expandir_clase(t)
+        else:
+            conjunto = t
+        veces = 1
+        if i < len(tokens) and tokens[i].startswith("{"):
+            veces = int(tokens[i][1:-1])
+            i += 1
+        for _ in range(veces):
+            salida.append(conjunto)
+            posicion += 1
+    return salida
+
+
+def derivar(blob):
+    """Rejilla de 33 alfabetos a partir del blob de regex."""
+    blob = blob.replace("\\\\", "\\")  # tolera el pegado con doble barra
+    rejilla = [UNIVERSO] * 33
+    for tokens in dividir_regex(blob):
+        rest = restricciones(tokens)
+        if rest is None:
+            continue
+        for pos, conjunto in enumerate(rest):
+            permitido = set(rejilla[pos]) & set(conjunto)
+            if conjunto == UNIVERSO:
+                # "cualquiera" no reordena; solo recorta
+                rejilla[pos] = "".join(c for c in rejilla[pos] if c in permitido)
+            else:
+                rejilla[pos] = "".join(c for c in conjunto if c in permitido)
+    # "cualquiera" se acota a letras para la fuerza bruta
+    rejilla = [LETRAS if conjunto == UNIVERSO else conjunto for conjunto in rejilla]
+    for pos, conjunto in enumerate(rejilla):
+        if not conjunto:
+            raise SystemExit(f"[!] Rejilla vacia en la posicion {pos}: revisa REGEX.")
+    return rejilla
 
 
 def producto(texto):
@@ -63,8 +184,8 @@ def resolver(objetivo, alfabetos):
     combinaciones = ("".join(p) for p in product(*alfabetos))
     candidatas = [c for c in combinaciones if producto(c) == objetivo]
     if not candidatas:
-        raise SystemExit(f"[!] Ninguna combinacion calza con {objetivo}: "
-                         "revisa CORR_VALUES y la rejilla.")
+        raise SystemExit(f"[!] Ninguna combinacion calza con {objetivo:#x}: "
+                         "revisa CORR_VALUES.")
     return candidatas
 
 
@@ -73,8 +194,17 @@ def main():
     print(" Descifrador de la passphrase - Rega's Town")
     print("=" * 60)
 
+    rejilla = derivar(REGEX)
+    segmentos = [tuple(rejilla[p] for p in range(a, b)) for a, b in TROZOS]
+    print(" Rejilla derivada de las regex:")
+    for numero, alfabetos in enumerate(segmentos, 1):
+        print(f"   {numero} -> {alfabetos}")
+
+    # CORR_VALUES se pega tal cual del dump (hex); si ya son enteros, directo
+    objetivos = [v if isinstance(v, int) else int(v, 16) for v in CORR_VALUES]
+
     partes = list()
-    for numero, (objetivo, alfabetos) in enumerate(zip(CORR_VALUES, SEGMENTOS), 1):
+    for numero, (objetivo, alfabetos) in enumerate(zip(objetivos, segmentos), 1):
         candidatas = resolver(objetivo, alfabetos)
         print(f"\nSegmento {numero} -> candidatas: {candidatas}")
 
